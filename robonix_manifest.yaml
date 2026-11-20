@@ -1,0 +1,161 @@
+manifestVersion: 1
+name: robot-xyz-robonix
+
+catalog:
+  name: robonix.robot.xyz.plotter
+  version: 0.1.0
+  description: 3-axis XYZ Cartesian pen plotter driven by an external PLC over TCP.
+  license: MIT
+  tags: [robot, deploy, xyz, plotter, gantry, plc]
+  maintainers:
+    - shadosider <1439107161@qq.com>
+    - MuoTT <muott0927@gmail.com>
+
+# Robonix system services. atlas / executor / pilot / liaison ship with
+# robonix-cli; rbnx boot spawns them in this order before any user package.
+system:
+  atlas:    { listen: 127.0.0.1:50051, log: info }
+  executor: { listen: 127.0.0.1:50061, log: info }
+  soma:
+    robot_yaml: ./soma.yaml
+  pilot:
+    listen: 127.0.0.1:50071
+    log: info
+    vlm:
+      # Placeholders only. Fill these in robonix_manifest.local.yaml, which
+      # is git-ignored. Never commit or share a real API key.
+      upstream:   ""  # e.g. http://127.0.0.1:8000/v1
+      api_key:    ""  # e.g. deepseek-v4.1-flash
+      model:      ""  # Your API_KEY 
+      api_format: openai
+  liaison:  { listen: 127.0.0.1:50081, log: info }
+
+# ── Primitive: PLC/TCP device layer ──────────────────────────────────
+# The ONLY package that knows how to talk to the PLC. It owns the TCP
+# framing, CRC, point-by-point ACK policy, homing and status reporting.
+# Declared first: rbnx boot has no defer/retry, so the skill must be
+# able to find robonix/primitive/plotter/* at activation time.
+primitive:
+  - name: xyz_plotter
+    path: ./packages/primitives/primitive-hdu-cartesian-plotter-rbnx
+    config:
+      # MatrixBox MX4001 PLC, TCP server on port 2000 (SDK default).
+      host: 192.168.1.135
+      port: 2000
+      # Connect timeout and the floor for per-point ACK timeouts.
+      timeout_s: 30.0
+      connect_on_init: true
+      units: mm
+      # Pen heights in the paper frame. Machine zero is 50 mm above the
+      # paper's lower-left corner, so the paper surface is z = -50.
+      z_up: -46.0
+      z_down: -50.0
+      # Global motion profile (PLC SET_PARAM: 6 x float32).
+      velocity: 20.0
+      acceleration: 300.0
+      deceleration: 300.0
+      jerk: 3000.0
+      status_rate_hz: 2.0
+      max_points: 100000
+
+# ── Skills: text and drawing, both → primitive ───────────────────────
+# Lazily activated by the executor on the first MCP call. Text writing and
+# drawing are separate packages so their configs and tool surfaces stay
+# small. Both resolve the same plotter primitive and all geometry comes
+# from the repository SDK/ (Hershey + 3755 hanzi strokes, Otsu/marching-
+# squares images).
+skill:
+  # Text only: robonix/skill/text/write_text.
+  - name: xyz_text
+    path: ./packages/skills/skill-hdu-text-rbnx
+    config:
+      workspace:
+        x_min: 0.0
+        x_max: 180.0
+        y_min: 0.0
+        y_max: 150.0
+        z_up: -46.0
+        z_down: -50.0
+      font_size_mm: 10.0
+      line_spacing: 1.5
+      letter_spacing_mm: 0.5
+      origin_x: 5.0
+      # Negative -> SDK default: text block top-aligned at the workspace top.
+      origin_y: -1.0
+      auto_home: true
+      resolve_timeout_s: 60.0
+      max_points: 50000
+      trajectory_timeout_s: 600.0
+
+  # Drawing only: draw_scene / render_preview / draw_image / list_images.
+  # image_dir is the only read root (plus output_dir); output_dir is the
+  # write root. debug enables render_preview; actual drawing always uses
+  # draw_scene or draw_image.
+  # Speed/acceleration/pen heights are primitive-level: set them with
+  # plotter_set_params (or plotter_home for homing), not in this config.
+  # Relative paths resolve to images/ under the deployment root (the
+  # directory containing packages/), or under ROBONIX_WORKSPACE when that
+  # is set.
+  - name: xyz_draw
+    path: ./packages/skills/skill-hdu-draw-rbnx
+    config:
+      workspace:
+        x_min: 0.0
+        x_max: 180.0
+        y_min: 0.0
+        y_max: 150.0
+        z_up: -46.0
+        z_down: -50.0
+      auto_home: true
+      # Home before sending a trajectory. plotter_home is still a separate
+      # MCP tool; pass skip_home=true when it was already called.
+      home_before_draw: true
+      image_dir: images
+      # Empty -> same as image_dir. Generated files are always readable
+      # by draw_image, whether or not the two directories differ.
+      output_dir: ""
+      # If true, render_preview is enabled and draw_scene writes
+      # output_dir/last_preview.png before moving (skip_preview=true skips
+      # it). Preview failures warn but never block drawing. If false, no
+      # preview is written.
+      debug: true
+      # Text-to-image for draw_prompt. Set enabled=true and fill base_url,
+      # model and api_key to turn "draw a cat" into imagegen -> lineart.
+      # The service must speak the OpenAI /images/generations API.
+      imagegen_enabled: false
+      imagegen_base_url: ""            # e.g. http://127.0.0.1:8000/v1
+      imagegen_model: ""               # e.g. dall-e-3 / flux-1.1-pro
+      imagegen_api_key: ""             # or IMAGE_GEN_API_KEY / OPENAI_API_KEY
+      imagegen_size: "1024x768"
+      imagegen_timeout_s: 120.0
+      # Optional suffix appended to every prompt, e.g.
+      # "high contrast, clean white background, black line art, no text".
+      imagegen_prompt_suffix: ""
+      allowed_image_suffixes: [".png", ".jpg", ".jpeg", ".bmp", ".webp"]
+      max_list_images: 200
+      simplify_px: 1.5
+      image_margin_mm: 5.0
+      image_fill: 0.8
+      # draw_image tracing. auto = skeleton for preview PNGs, outline
+      # otherwise; use lineart for photos and grey artwork.
+      trace: auto
+      trace_lineart_sigma: 1.2
+      trace_lineart_detail: 1.0
+      trace_spur_px: 2.0
+      trace_min_length_mm: 1.0
+      # Join fragments whose endpoints are within this many pixels, so
+      # lineart/skeleton strokes stay continuous (0 disables).
+      trace_bridge_px: 3.0
+      generate_default_width_mm: 180.0
+      generate_default_height_mm: 150.0
+      # Millimetres per pixel: 0.25 = 4 px/mm -> 720 x 600 for the paper.
+      generate_pixel_to_mm: 0.25
+      generate_line_width_mm: 0.5
+      generate_supersample: 2
+      generate_max_pixels: 4096
+      generate_max_spec_bytes: 1048576
+      generate_max_strokes: 20000
+      generate_max_points: 200000
+      resolve_timeout_s: 60.0
+      max_points: 50000
+      trajectory_timeout_s: 600.0

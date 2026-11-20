@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!--
+  Minimal kinematic description of the XYZ Cartesian plotter.
+
+  base_link        fixed frame, bolted to the desktop
+    x_carriage     prismatic along +X, 0 .. 0.18 m   (0-180 mm)
+      y_carriage   prismatic along +Y, 0 .. 0.15 m   (0-150 mm)
+        z_carriage prismatic along Z, -0.05 .. 0 m   (pen down .. pen up)
+                   z_carriage is the tool centre point.
+
+  Machine zero (0, 0, 0) is 50 mm above the paper's lower-left corner,
+  so the paper surface is z = -50 mm, pen down z = -50 mm, pen up
+  z = -46 mm.
+
+  Joint limits are expressed in metres (URDF convention). This file is
+  descriptive only: the PLC owns motion and the Robonix contracts already
+  use millimetres, so nothing converts m <-> mm at runtime.
+-->
+<robot name="xyz_plotter">
+  <link name="base_link">
+    <visual>
+      <geometry><box size="0.36 0.36 0.05"/></geometry>
+    </visual>
+    <collision>
+      <geometry><box size="0.36 0.36 0.05"/></geometry>
+    </collision>
+  </link>
+
+  <link name="x_carriage">
+    <visual>
+      <geometry><box size="0.08 0.08 0.06"/></geometry>
+    </visual>
+    <collision>
+      <geometry><box size="0.08 0.08 0.06"/></geometry>
+    </collision>
+  </link>
+
+  <link name="y_carriage">
+    <visual>
+      <geometry><box size="0.06 0.06 0.05"/></geometry>
+    </visual>
+    <collision>
+      <geometry><box size="0.06 0.06 0.05"/></geometry>
+    </collision>
+  </link>
+
+  <link name="z_carriage">
+    <visual>
+      <geometry><box size="0.04 0.04 0.04"/></geometry>
+    </visual>
+    <collision>
+      <geometry><box size="0.04 0.04 0.04"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="x_joint" type="prismatic">
+    <parent link="base_link"/>
+    <child link="x_carriage"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="0.0" upper="0.18" effort="50.0" velocity="0.30"/>
+  </joint>
+
+  <joint name="y_joint" type="prismatic">
+    <parent link="x_carriage"/>
+    <child link="y_carriage"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0.0" upper="0.15" effort="50.0" velocity="0.30"/>
+  </joint>
+
+  <joint name="z_joint" type="prismatic">
+    <parent link="y_carriage"/>
+    <child link="z_carriage"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.05" upper="0.0" effort="20.0" velocity="0.05"/>
+  </joint>
+</robot>

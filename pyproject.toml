@@ -1,0 +1,25 @@
+[project]
+name = "robot-hdu-cartesian"
+version = "0.0.0"
+description = "Robonix XYZ Cartesian pen plotter deployment"
+requires-python = ">=3.10"
+
+# One shared environment for the primitive and both skills. The Robonix
+# Python runtime itself (robonix_api) is still injected at process start via
+# `rbnx path robonix-api`; these are its runtime dependency pins so the
+# generated stubs import against compatible grpc/protobuf versions.
+dependencies = [
+    "numpy>=1.24",
+    "Pillow>=10.0",
+    "grpcio==1.80.0",
+    "protobuf==6.33.6",
+    "mcp>=1.27,<2",
+    "fastmcp>=3,<4",
+    "pyyaml>=6",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "grpcio-tools==1.80.0"]
+
+[tool.uv]
+package = false

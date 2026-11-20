@@ -1,0 +1,90 @@
+urdf:
+  path: ./urdf/xyz_plotter.urdf
+  root_link: base_link
+  model_name: xyz_plotter
+
+robot:
+  id: xyz_plotter_01
+  display_name: XYZ 三轴写字机器人
+  family: cartesian_plotter
+  root_part: gantry
+  dimensions: { length_m: 0.36, width_m: 0.36, height_m: 0.20 }
+  mass_kg: 8.0
+  # It cannot pass through a door at all — it is bolted to a desktop.
+  passable_door_width_m: 0.0
+  footprint:
+    base_frame: base_link
+    points:
+      - [0.18, 0.18]
+      - [0.18, -0.18]
+      - [-0.18, -0.18]
+      - [-0.18, 0.18]
+  exports:
+    - provider_id: xyz_text
+      capabilities:
+        - { path: robonix/skill/text/write_text, description: "Write Chinese/English text as pen strokes." }
+    - provider_id: xyz_draw
+      capabilities:
+        - { path: robonix/skill/plot/config, description: "Read draw policy flags (debug, imagegen_ready) before planning; no motion, no files." }
+        - { path: robonix/skill/plot/draw_scene, description: "Structured/geometric requests. Homes first; writes last_preview.png when debug=true." }
+        - { path: robonix/skill/plot/draw_prompt, description: "Preferred for free-form drawing when imagegen_ready=true; fall back to draw_scene on failure." }
+        - { path: robonix/skill/plot/render_preview, description: "Call before draw_scene when debug=true; writes output_dir/last_preview.png." }
+        - { path: robonix/skill/plot/draw_image, description: "Trace an image from image_dir/output_dir and draw it; homes first." }
+        - { path: robonix/skill/plot/list_images, description: "List images that draw_image is allowed to read." }
+  components:
+    - id: gantry
+      type: cartesian_gantry
+      urdf_link: base_link
+      exports:
+        - provider_id: xyz_plotter
+          capabilities:
+            - { path: robonix/primitive/plotter/driver, description: "Lifecycle + PLC connection." }
+            - { path: robonix/primitive/plotter/trajectory, description: "Execute a list of (x,y,z) waypoints." }
+            - { path: robonix/primitive/plotter/home, description: "Send the gantry to machine zero (MCP plotter_home)." }
+            - { path: robonix/primitive/plotter/set_params, description: "Set pen heights and the global motion profile (MCP plotter_set_params)." }
+            - { path: robonix/primitive/plotter/status, description: "Synthesized connection/busy/position status stream." }
+    - id: pen
+      type: end_effector
+      urdf_link: z_carriage
+      exports:
+        - provider_id: xyz_text
+          capabilities:
+            - { path: robonix/skill/text/write_text, description: "Text is rendered by the pen tip." }
+        - provider_id: xyz_draw
+          capabilities:
+            - { path: robonix/skill/plot/draw_scene, description: "Directly plotted scene strokes are rendered by the pen tip; previews when debug=true." }
+            - { path: robonix/skill/plot/draw_prompt, description: "Prompt-generated images are traced and rendered by the pen tip; preferred for free-form drawing." }
+            - { path: robonix/skill/plot/render_preview, description: "Writes output_dir/last_preview.png; call before draw_scene when debug=true." }
+            - { path: robonix/skill/plot/draw_image, description: "Image traces are rendered by the pen tip." }
+
+description:
+  summary: >
+    桌面型三轴直角坐标（XYZ）龙门写字机。X/Y 两轴在 180 mm × 150 mm 的纸面内移动笔尖，
+    Z 轴只在 -46 mm（抬笔）到 -50 mm（落笔）之间升降；机器零点 (0,0,0) 位于纸张
+    左下角上方 50 mm。没有底盘、没有轮子、没有多关节机械臂；全部运动由外部 PLC
+    经 TCP（端口 2000）控制，Robonix 只下发坐标航点并等待 PLC 的 ACK。
+  can_do:
+    - 在 180 mm × 150 mm 纸面内书写英文大小写、数字、空格、换行，以及字库内的 3755 个 GB2312 一级汉字。
+    - 按字高、行距、字距和起点排版多行文本，并支持 dry_run 预览点数与包围盒。
+    - 用声明式 JSON 场景（线、折线、多边形、矩形、圆、椭圆、圆弧）直接绘制，每笔画只下一次笔，不执行任意脚本。
+    - 可选用 OpenAI 兼容的文生图服务：文本提示词 → PNG → 默认 lineart 追踪后绘制；未启用时不发起网络请求。
+    - 只从配置的 image_dir/output_dir 读取图片，并且只把 debug 预览写入 output_dir，避免污染仓库或系统目录。
+    - 把 PNG/JPEG/BMP/WebP 图片二值化，按 outline/skeleton/lineart 模式追踪轮廓或骨架，简化后等比适配纸张并绘制，支持反转、镜像与显式缩放。
+    - 识别 render_preview 写入的方向/比例元数据，把预览图按屏幕方向、1:1 毫米比例绘制。
+    - debug=true 时启用 render_preview，且 draw_scene 在下笔前自动写 last_preview.png；debug=false 时不写预览，预览失败只告警。
+    - 绘制前默认先回零（home_before_draw）；plotter_home 仍是独立工具，已调用时传 skip_home 避免重复。
+    - 自由描述/插画在 imagegen_ready=true 时优先 draw_prompt，失败后用 draw_scene 画简化场景。
+    - 列出可绘制图片（可按文件名过滤），接收任意 (x, y, z) 航点序列，供签名或自定义路径复用。
+    - 通过 SET_PARAM 设置全局速度、加速度、减速度、jerk 与抬笔/落笔高度。
+    - 执行回零（home，固定回 (0,0,0)），并上报连接状态、忙闲、当前坐标与最近错误。
+  cannot_do:
+    - 不能移动底座或自主导航（无底盘、无轮子）。
+    - 不能感知环境、避障或识别物体（无相机、无雷达）。
+    - 不能书写标点符号或字库外的汉字；单笔画字体只覆盖 ASCII 字母数字和 3755 个一级汉字。
+    - 绘图只支持线稿，不支持填充、颜色、渐变或文字；文字必须交给 text skill。
+    - 不能自动换笔、换色、控制下笔压力或检测墨水余量。
+    - 不能力控/柔顺控制；Z 轴只有抬笔与落笔两个离散高度。
+    - 协议没有 STOP：任务中途失败时笔会停在原地，只能再次 home。
+    - 运动参数是全局的，不能逐点设置速度或加速度。
+    - 状态是 primitive 根据命令进度和最近 ACK 合成的，不是编码器/限位开关的实时反馈。
+    - 不能保证掉电后的绝对位置，上电后应先执行 home。
