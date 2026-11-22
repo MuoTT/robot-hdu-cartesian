@@ -103,6 +103,8 @@ Set `system.pilot.vlm.upstream`, `system.pilot.vlm.api_key`,
 > key is exposed, rotate it immediately. Keep the checked-in manifest free of
 > credentials.
 
+For the related PLC-side deployments, please see https://github.com/HDU-FROST/PLC-cartesian.
+
 The PLC must be reachable before boot when `connect_on_init: true`. Confirm
 TCP port 2000 is open; ICMP may be disabled on the PLC:
 

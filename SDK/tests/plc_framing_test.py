@@ -6,13 +6,13 @@
 用法::
 
     # 先让 PLC 运行 tcp_test，监听 2000
-    python tests/plc_framing_test.py --host 192.168.33.130 --port 2000
+    python tests/plc_framing_test.py --host 192.168.1.135 --port 2000
 
     # 不进入菜单，直接顺序跑全部测试
-    python tests/plc_framing_test.py --host 192.168.33.130 --port 2000 --run-all
+    python tests/plc_framing_test.py --host 192.168.1.135 --port 2000 --run-all
 
     # 顺序测试时也执行 HOME（真实回零，谨慎）
-    python tests/plc_framing_test.py --host 192.168.33.130 --port 2000 --run-all --include-home
+    python tests/plc_framing_test.py --host 192.168.1.135 --port 2000 --run-all --include-home
 
 菜单测试项：
   1. 正常 PING
@@ -274,7 +274,7 @@ def make_client(args: argparse.Namespace) -> RawClient | None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="PLC TCP framing test (interactive)")
-    ap.add_argument("--host", default="192.168.33.130")
+    ap.add_argument("--host", default="192.168.1.135")
     ap.add_argument("--port", type=int, default=2000)
     ap.add_argument("--timeout", type=float, default=2.0)
     ap.add_argument("--split-delay", type=float, default=0.1, help="半包测试两段之间的间隔（秒）")

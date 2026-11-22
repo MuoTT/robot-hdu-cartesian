@@ -13,7 +13,7 @@
 
     # 文字书写（写完自动回零），支持西文/数字/汉字
     python tests/draw.py text "Hello 你好 123" --dry-run
-    python tests/draw.py text "Hello 你好" --host 192.168.33.130 --port 2000
+    python tests/draw.py text "Hello 你好" --host 192.168.1.135 --port 2000
     python tests/draw.py text "ABC" --font-size-mm 15 --reset
 """
 
@@ -46,7 +46,7 @@ DEFAULT_PAPER_H = 150.0
 # 公共参数
 # ---------------------------------------------------------------------------
 def add_common_args(p: argparse.ArgumentParser, z_down: float) -> None:
-    p.add_argument("--host", default="192.168.33.130", help="PLC 地址")
+    p.add_argument("--host", default="192.168.1.135", help="PLC 地址")
     p.add_argument("--port", type=int, default=2000, help="PLC 端口")
     p.add_argument("--timeout", type=float, default=30.0, help="连接/首点等待超时 (s)")
     p.add_argument("--z-up", type=float, default=-46.0, help="抬笔高度 (mm)，纸面 -50 上方 4 mm")
