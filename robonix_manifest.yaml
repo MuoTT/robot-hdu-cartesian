@@ -1,8 +1,8 @@
 manifestVersion: 1
-name: robot-xyz-robonix
+name: robonix-hdu-cartesian-deploy
 
 catalog:
-  name: robonix.robot.xyz.plotter
+  name: robonix.robot.hdu.cartesian
   version: 0.1.0
   description: 3-axis XYZ Cartesian pen plotter driven by an external PLC over TCP.
   license: MIT

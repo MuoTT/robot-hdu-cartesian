@@ -1,12 +1,13 @@
 manifestVersion: 1
 
 package:
-  name: robonix.primitive.xyz.plotter
+  name: robonix.primitive.hdu.plotter
   version: 0.1.0
   description: XYZ 三轴写字机 primitive — 基于 SDK 的 PLC/TCP 传输、逐点轨迹、回零、参数与状态。
   tags: [primitive, plotter, xyz, gantry, plc, tcp]
   maintainers:
-    - robot-xyz-robonix contributors
+    - shadosider <1439107161@qq.com>
+    - MuoTT <muott0927@gmail.com>
   license: MIT
 
 build: bash scripts/build.sh
