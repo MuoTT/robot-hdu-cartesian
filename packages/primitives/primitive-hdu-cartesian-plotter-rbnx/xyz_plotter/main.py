@@ -554,6 +554,27 @@ def set_params_tool(req: MCPSetParams_Request) -> MCPSetParams_Response:
     return MCPSetParams_Response(success=success, message=message)
 
 
+# ── geometry ─────────────────────────────────────────────────────
+@xyz_plotter.grpc("robonix/primitive/plotter/geometry")
+def geometry(req, ctx):
+    """Report the static machine geometry from the deployment config.
+
+    Skills call this once on activation. Area and pen heights are config,
+    not feedback: the PLC has no readback.
+    """
+    cfg = _state["cfg"]
+    return plotter_pb2.Geometry_Response(
+        success=True,
+        message="ok",
+        x_min=0.0,
+        x_max=float(cfg["area_x_max"]),
+        y_min=0.0,
+        y_max=float(cfg["area_y_max"]),
+        z_up=float(cfg["z_up"]),
+        z_down=float(cfg["z_down"]),
+    )
+
+
 # ── status stream ────────────────────────────────────────────────────
 def _status_message():
     cfg = _state["cfg"]

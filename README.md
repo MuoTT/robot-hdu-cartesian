@@ -40,7 +40,7 @@ robot-hdu-cartesian/
 ├── uv.lock
 ├── .python-version
 ├── scripts/uv_sync.sh             # serialized uv sync used by package builds
-├── SDK/                           # authoritative PLC protocol + geometry pipeline
+├── (PLC protocol + geometry are vendored per package; no shared SDK/)
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   └── PLC_PROTOCOL.md
@@ -53,7 +53,7 @@ robot-hdu-cartesian/
 
 | Layer | Package | Contracts | Responsibility |
 | --- | --- | --- | --- |
-| primitive | [`primitive-hdu-cartesian-plotter-rbnx`](packages/primitives/primitive-hdu-cartesian-plotter-rbnx/README.md) | `robonix/primitive/plotter/{driver,trajectory,home,set_params,status}` | The only package that talks TCP to the PLC; coordinates and motion parameters only |
+| primitive | [`primitive-hdu-cartesian-plotter-rbnx`](packages/primitives/primitive-hdu-cartesian-plotter-rbnx/README.md) | `robonix/primitive/plotter/{driver,trajectory,home,set_params,status,geometry}` | The only package that talks TCP to the PLC; coordinates and motion parameters only |
 | skill | [`skill-text-rbnx`](packages/skills/skill-text-rbnx/README.md) | `robonix/skill/text/{driver,write_text}` | Turns Chinese/English text into pen strokes |
 | skill | [`skill-draw-rbnx`](packages/skills/skill-draw-rbnx/README.md) | `robonix/skill/plot/{driver,config,draw_scene,draw_prompt,render_preview,draw_image,list_images}` | Declarative scenes, prompt-to-image, debug previews, and traced images |
 
@@ -168,6 +168,8 @@ high draws nothing.
 
 Bring-up order:
 
+0. `rbnx caps` must list `robonix/primitive/plotter/geometry`; the skills read
+   their drawable area and pen heights from it on activation.
 1. Confirm the PLC is reachable and `plotter_home` completes.
 2. Confirm the primitive status stream reports `connected` and `IDLE`.
 3. Dry-run a short text or scene and check the point count and bounding box.

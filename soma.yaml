@@ -43,6 +43,7 @@ robot:
             - { path: robonix/primitive/plotter/home, description: "Send the gantry to machine zero (MCP plotter_home)." }
             - { path: robonix/primitive/plotter/set_params, description: "Set pen heights and the global motion profile (MCP plotter_set_params)." }
             - { path: robonix/primitive/plotter/status, description: "Synthesized connection/busy/position status stream." }
+            - { path: robonix/primitive/plotter/geometry, description: "Static drawable area and pen heights, read once by skills on activation." }
     - id: pen
       type: end_effector
       urdf_link: z_carriage
