@@ -5,7 +5,7 @@ urdf:
 
 robot:
   id: xyz_plotter_01
-  display_name: XYZ 三轴写字机器人
+  display_name: HDU-FROST XYZ 三轴写字机器人
   family: cartesian_plotter
   root_part: gantry
   dimensions: { length_m: 0.36, width_m: 0.36, height_m: 0.20 }
@@ -59,7 +59,8 @@ robot:
 
 description:
   summary: >
-    桌面型三轴直角坐标（XYZ）龙门写字机。X/Y 两轴在 180 mm × 150 mm 的纸面内移动笔尖，
+    HDU-FROST 桌面型三轴直角坐标（XYZ）龙门写字机（HDU = Hangzhou Dianzi University，
+    杭州电子科技大学；FROST 为该大学的机器人实验室）。X/Y 两轴在 180 mm × 150 mm 的纸面内移动笔尖，
     Z 轴只在 -46 mm（抬笔）到 -50 mm（落笔）之间升降；机器零点 (0,0,0) 位于纸张
     左下角上方 50 mm。没有底盘、没有轮子、没有多关节机械臂；全部运动由外部 PLC
     经 TCP（端口 2000）控制，Robonix 只下发坐标航点并等待 PLC 的 ACK。
