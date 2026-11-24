@@ -72,7 +72,7 @@ the discovery plane; Executor activates skills on their first MCP call.
 | `robonix/skill/plot/draw_image` | draw | rpc + MCP |
 | `robonix/skill/plot/list_images` | draw | rpc + MCP |
 
-The skills consume only `trajectory` and `home`. `set_params`, `home`, and
+The skills consume only `trajectory`, `home`, and `geometry`. `set_params`, `home`, and
 `status` are also exposed directly to Pilot/LLM so motion parameters and
 homing are not hidden behind a skill.
 
@@ -205,11 +205,11 @@ failed HOME aborts before motion; a preview failure is non-fatal.
 
 ## 8. Codegen and contract mirroring
 
-Skills need gRPC stubs for `Trajectory` and `Home`, but those contracts are
+Skills need gRPC stubs for `Trajectory`, `Home`, and `Geometry`, but those contracts are
 owned by the primitive. Each skill keeps a read-only mirror:
 
 ```text
-skill-hdu-*/capabilities/
+skill-*/capabilities/
 ├── <own>.v1.toml                 # provided, listed in package_manifest.yaml
 ├── lib/...                       # own IDL
 └── primitive/plotter/*.v1.toml   # mirrored, consume-only

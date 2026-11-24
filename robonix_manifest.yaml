@@ -24,9 +24,9 @@ system:
     vlm:
       # Placeholders only. Fill these in robonix_manifest.local.yaml, which
       # is git-ignored. Never commit or share a real API key.
-      upstream:   ""  # e.g. http://127.0.0.1:8000/v1
-      api_key:    ""  # e.g. deepseek-v4.1-flash
-      model:      ""  # Your API_KEY 
+      upstream:   ""  # e.g. https://api.deepseek.com/v1
+      api_key:    ""  # e.g. sk-xxxxx - never commit a real key
+      model:      ""  # e.g. deepseek-flash
       api_format: openai
   liaison:  { listen: 127.0.0.1:50081, log: info }
 
